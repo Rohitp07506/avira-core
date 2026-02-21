@@ -115,7 +115,6 @@ coreButton.onclick = () => {
 updateMetrics();
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker.register("/sw.js");
-  });
+  navigator.serviceWorker.register("/service-worker.js")
+    .then(() => console.log("SW Registered"));
 }
