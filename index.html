@@ -1,12 +1,17 @@
 <!DOCTYPE html>
-<html>
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#00f0ff">
+<html lang="en">
+
+<head>
   <meta charset="UTF-8">
   <title>AVIRA System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#00f0ff">
+  
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
   <div class="system-header">
@@ -31,5 +36,14 @@
   <canvas id="waveform"></canvas>
 
   <script src="main.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js');
+      });
+    }
+  </script>
+
 </body>
 </html>
