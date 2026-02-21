@@ -1,10 +1,10 @@
 {
-  "name": "AVIRA Core",
+  "name": "AVIRA",
   "short_name": "AVIRA",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#000000",
+  "theme_color": "#00f0ff",
   "orientation": "portrait",
   "icons": [
     {
