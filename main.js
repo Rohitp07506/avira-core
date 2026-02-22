@@ -1,3 +1,5 @@
+alert("JS LOADED");
+
 document.addEventListener("DOMContentLoaded", function() {
 
   const coreButton = document.getElementById("coreButton");
