@@ -1,120 +1,175 @@
+// ===============================
+// AVIRA CORE SYSTEM v2.0
+// ===============================
+
 const coreButton = document.getElementById("coreButton");
 const statusText = document.getElementById("statusText");
-
-const intelligenceLevelEl = document.getElementById("intelligenceLevel");
-const interactionCountEl = document.getElementById("interactionCount");
-const successRateEl = document.getElementById("successRate");
-const memorySizeEl = document.getElementById("memorySize");
-const uptimeEl = document.getElementById("uptime");
-
+const intelligenceLevel = document.getElementById("intelligenceLevel");
+const interactionCount = document.getElementById("interactionCount");
+const successRate = document.getElementById("successRate");
+const memorySize = document.getElementById("memorySize");
+const uptimeDisplay = document.getElementById("uptime");
 const canvas = document.getElementById("waveform");
 const ctx = canvas.getContext("2d");
 
-let AVIRA = JSON.parse(localStorage.getItem("AVIRA")) || {
-  version: "1.0",
-  protocol: "Stark Adaptive Protocol",
-  interactions: 0,
-  successful: 0,
-  learnedCommands: [],
-  memory: [],
-  startTime: Date.now()
-};
+let interactions = 0;
+let successes = 0;
+let intelligence = 1;
+let startTime = Date.now();
 
-function saveSystem() {
-  localStorage.setItem("AVIRA", JSON.stringify(AVIRA));
+// ===============================
+// UPTIME SYSTEM
+// ===============================
+setInterval(() => {
+  const seconds = Math.floor((Date.now() - startTime) / 1000);
+  uptimeDisplay.textContent = seconds + "s";
+}, 1000);
+
+// ===============================
+// STATUS
+// ===============================
+function updateStatus(text) {
+  statusText.textContent = text;
 }
 
-function updateMetrics() {
-  let intelligence =
-    (AVIRA.learnedCommands.length * 10) +
-    (AVIRA.successful * 2) +
-    (AVIRA.memory.length * 5);
-
-  intelligenceLevelEl.innerText = intelligence;
-  interactionCountEl.innerText = AVIRA.interactions;
-
-  let rate = AVIRA.interactions > 0
-    ? Math.floor((AVIRA.successful / AVIRA.interactions) * 100)
-    : 0;
-
-  successRateEl.innerText = rate;
-  memorySizeEl.innerText = AVIRA.memory.length;
-
-  let uptime = Math.floor((Date.now() - AVIRA.startTime) / 1000);
-  uptimeEl.innerText = uptime + "s";
-}
-
-setInterval(updateMetrics, 1000);
-
+// ===============================
+// SPEAK FUNCTION
+// ===============================
 function speak(text) {
-  const utter = new SpeechSynthesisUtterance(text);
-  speechSynthesis.speak(utter);
-  visualize();
-}
-
-function visualize() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (let i = 0; i < 30; i++) {
-    let height = Math.random() * 80;
-    ctx.fillStyle = "#00f0ff";
-    ctx.fillRect(i * 12, 100 - height, 8, height);
-  }
-}
-
-function processCommand(command) {
-  AVIRA.interactions++;
-  AVIRA.memory.push(command);
-
-  if (!AVIRA.learnedCommands.includes(command)) {
-    AVIRA.learnedCommands.push(command);
-  }
-
-  let response = "Command acknowledged.";
-
-  if (command.includes("hello")) {
-    response = "Hello Rohit.";
-    AVIRA.successful++;
-  }
-  else if (command.includes("time")) {
-    response = new Date().toLocaleTimeString();
-    AVIRA.successful++;
-  }
-  else if (command.includes("who are you")) {
-    response = "I am AVIRA, evolving with you.";
-    AVIRA.successful++;
-  }
-
-  saveSystem();
-  updateMetrics();
-  speak(response);
-}
-
-coreButton.onclick = () => {
-  if (!('webkitSpeechRecognition' in window)) {
-    alert("Speech Recognition not supported in this browser.");
+  if (!("speechSynthesis" in window)) {
+    updateStatus("VOICE NOT SUPPORTED");
     return;
   }
 
-  const recognition = new webkitSpeechRecognition();
-  recognition.start();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-US";
+  utterance.rate = 1;
+  utterance.pitch = 1;
 
-  statusText.innerText = "LISTENING";
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
 
-  recognition.onresult = function(event) {
-    const transcript = event.results[0][0].transcript.toLowerCase();
-    statusText.innerText = "PROCESSING";
-    processCommand(transcript);
-    statusText.innerText = "SYSTEM IDLE";
+  utterance.onend = () => {
+    updateStatus("SYSTEM IDLE");
   };
-
-  recognition.onerror = function() {
-    statusText.innerText = "ERROR";
-  };
-};
-
-updateMetrics();
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/service-worker.js")
-    .then(() => console.log("SW Registered"));
 }
+
+// ===============================
+// WAVEFORM VISUAL
+// ===============================
+canvas.width = window.innerWidth;
+canvas.height = 150;
+
+function drawWave() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.beginPath();
+  for (let x = 0; x < canvas.width; x++) {
+    const y =
+      canvas.height / 2 +
+      Math.sin(x * 0.02 + Date.now() * 0.005) * 20;
+    ctx.lineTo(x, y);
+  }
+
+  ctx.strokeStyle = "#00f0ff";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  requestAnimationFrame(drawWave);
+}
+
+drawWave();
+
+// ===============================
+// AI FETCH SECTION
+// ===============================
+async function fetchAIResponse(userText) {
+  try {
+    const response = await fetch("/api/ai", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: userText }),
+    });
+
+    const data = await response.json();
+
+    if (data.reply) {
+      return data.reply;
+    } else {
+      return "I could not understand the response.";
+    }
+  } catch (error) {
+    console.error("AI ERROR:", error);
+    return "AI system temporarily unavailable.";
+  }
+}
+
+// ===============================
+// PROCESS COMMAND
+// ===============================
+async function processCommand(text) {
+  updateStatus("PROCESSING");
+
+  interactions++;
+  interactionCount.textContent = interactions;
+
+  const aiReply = await fetchAIResponse(text);
+
+  if (aiReply) {
+    successes++;
+    successRate.textContent = Math.floor(
+      (successes / interactions) * 100
+    );
+  }
+
+  intelligence++;
+  intelligenceLevel.textContent = intelligence;
+  memorySize.textContent = interactions;
+
+  speak(aiReply);
+}
+
+// ===============================
+// SPEECH RECOGNITION
+// ===============================
+let recognition;
+
+if ("webkitSpeechRecognition" in window) {
+  recognition = new webkitSpeechRecognition();
+} else if ("SpeechRecognition" in window) {
+  recognition = new SpeechRecognition();
+}
+
+if (recognition) {
+  recognition.lang = "en-US";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    updateStatus("LISTENING");
+  };
+
+  recognition.onresult = (event) => {
+    const userText = event.results[0][0].transcript;
+    processCommand(userText);
+  };
+
+  recognition.onerror = () => {
+    updateStatus("SYSTEM IDLE");
+  };
+
+  recognition.onend = () => {};
+} else {
+  updateStatus("VOICE NOT SUPPORTED");
+}
+
+// ===============================
+// CORE BUTTON
+// ===============================
+coreButton.addEventListener("click", () => {
+  if (recognition) {
+    recognition.start();
+  }
+});
