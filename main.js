@@ -35,32 +35,55 @@ function updateStatus(text) {
 // ===============================
 // SPEAK FUNCTION
 // ===============================
-async function speak(text) {
-  updateStatus("PROCESSING");
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  try {
-    const response = await fetch("/api/tts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text: text }),
-    });
+if (!SpeechRecognition) {
+  updateStatus("VOICE NOT SUPPORTED");
+} else {
 
-    const blob = await response.blob();
-    const audioUrl = URL.createObjectURL(blob);
+  coreButton.addEventListener("click", () => {
 
-    const audio = new Audio(audioUrl);
-    audio.play();
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.interimResults = false;
 
-    audio.onended = () => {
+    updateStatus("LISTENING");
+
+    recognition.start();
+
+    recognition.onresult = async function(event) {
+
+      updateStatus("PROCESSING");
+
+      const transcript = event.results[0][0].transcript;
+
+      try {
+        const response = await fetch("/api/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: transcript })
+        });
+
+        const data = await response.json();
+
+        speak(data.reply);
+
+      } catch (err) {
+        updateStatus("AI ERROR");
+      }
+    };
+
+    recognition.onerror = function(event) {
+      updateStatus("MIC ERROR");
+      console.log(event.error);
+    };
+
+    recognition.onend = function() {
       updateStatus("SYSTEM IDLE");
     };
 
-  } catch (error) {
-    console.error("TTS ERROR:", error);
-    updateStatus("SYSTEM IDLE");
-  }
+  });
+
 }
 
 // ===============================
