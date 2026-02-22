@@ -48,3 +48,7 @@ canvas {
   background: red !important;
   z-index: 9999 !important;
 }
+
+canvas {
+  pointer-events: none;
+}
