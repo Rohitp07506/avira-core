@@ -35,23 +35,32 @@ function updateStatus(text) {
 // ===============================
 // SPEAK FUNCTION
 // ===============================
-function speak(text) {
-  if (!("speechSynthesis" in window)) {
-    updateStatus("VOICE NOT SUPPORTED");
-    return;
-  }
+async function speak(text) {
+  updateStatus("PROCESSING");
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-US";
-  utterance.rate = 1;
-  utterance.pitch = 1;
+  try {
+    const response = await fetch("/api/tts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text: text }),
+    });
 
-  speechSynthesis.cancel();
-  speechSynthesis.speak(utterance);
+    const blob = await response.blob();
+    const audioUrl = URL.createObjectURL(blob);
 
-  utterance.onend = () => {
+    const audio = new Audio(audioUrl);
+    audio.play();
+
+    audio.onended = () => {
+      updateStatus("SYSTEM IDLE");
+    };
+
+  } catch (error) {
+    console.error("TTS ERROR:", error);
     updateStatus("SYSTEM IDLE");
-  };
+  }
 }
 
 // ===============================
