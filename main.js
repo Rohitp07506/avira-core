@@ -2,8 +2,9 @@ alert("JS LOADED");
 
 document.addEventListener("DOMContentLoaded", function() {
 
-  const coreButton = document.getElementById("coreButton");
-  const statusText = document.getElementById("statusText");
+document.getElementById("coreButton");
+  
+const statusText = document.getElementById("statusText");
 
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
