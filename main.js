@@ -1,21 +1,28 @@
-const coreButton = document.getElementById("coreButton");
-const statusText = document.getElementById("statusText");
+document.addEventListener("DOMContentLoaded", function() {
 
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const coreButton = document.getElementById("coreButton");
+  const statusText = document.getElementById("statusText");
 
-if (!SpeechRecognition) {
-  statusText.innerText = "SpeechRecognition NOT supported";
-} else {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  statusText.innerText = "Ready";
+  if (!coreButton) {
+    console.log("Core button NOT found");
+    return;
+  }
 
-  coreButton.onclick = () => {
+  if (!SpeechRecognition) {
+    statusText.innerText = "Speech not supported";
+    return;
+  }
+
+  statusText.innerText = "SYSTEM READY";
+
+  coreButton.addEventListener("click", function() {
 
     const recognition = new SpeechRecognition();
     recognition.lang = "en-IN";
 
-    statusText.innerText = "Listening...";
-
+    statusText.innerText = "LISTENING";
     recognition.start();
 
     recognition.onresult = function(event) {
@@ -24,11 +31,13 @@ if (!SpeechRecognition) {
     };
 
     recognition.onerror = function(event) {
-      statusText.innerText = "Error: " + event.error;
+      statusText.innerText = "ERROR: " + event.error;
     };
 
     recognition.onend = function() {
-      console.log("Recognition ended");
+      statusText.innerText = "SYSTEM IDLE";
     };
-  };
-}
+
+  });
+
+});
