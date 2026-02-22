@@ -118,27 +118,24 @@ async function fetchAIResponse(userText) {
 // ===============================
 // PROCESS COMMAND
 // ===============================
-async function processCommand(text) {
+recognition.onresult = async function(event) {
+
   updateStatus("PROCESSING");
 
-  interactions++;
-  interactionCount.textContent = interactions;
+  const transcript = event.results[0][0].transcript;
 
-  const aiReply = await fetchAIResponse(text);
+  const response = await fetch("/api/ai", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ message: transcript })
+  });
 
-  if (aiReply) {
-    successes++;
-    successRate.textContent = Math.floor(
-      (successes / interactions) * 100
-    );
-  }
+  const data = await response.json();
 
-  intelligence++;
-  intelligenceLevel.textContent = intelligence;
-  memorySize.textContent = interactions;
-
-  speak(aiReply);
-}
+  speak(data.reply);
+};
 
 // ===============================
 // SPEECH RECOGNITION
